@@ -1,11 +1,18 @@
 package main
 
+import (
+	"errors"
+	"regexp"
+	"strconv"
+	"time"
+)
+
 type Folders map[string][]RuleGroup
 
 type RuleGroup struct {
-	Name     string `json:"name"`
-	Interval string `json:"interval"`
-	Rules    []Rule `json:"rules"`
+	Name     string   `json:"name"`
+	Interval Duration `json:"interval"`
+	Rules    []Rule   `json:"rules"`
 }
 
 type Rule struct {
@@ -76,4 +83,41 @@ type Dimensions struct {
 type RelativeTimeRange struct {
 	From int64 `json:"from"`
 	To   int64 `json:"to"`
+}
+
+type Duration time.Duration
+
+var (
+	durationFull       = regexp.MustCompile(`^((\d+)(\w))+$`)
+	durationEach       = regexp.MustCompile(`(\d+)(\w)`)
+	errInvalidDuration = errors.New("invalid duration")
+)
+
+func (d *Duration) UnmarshalText(b []byte) error {
+	if !durationFull.Match(b) {
+		return errInvalidDuration
+	}
+	matches := durationEach.FindAllStringSubmatch(string(b), -1)
+
+	var newd time.Duration
+	for _, m := range matches {
+		number, err := strconv.Atoi(m[1])
+		if err != nil {
+			return errInvalidDuration
+		}
+		switch m[2] {
+		case "h":
+			newd += time.Hour * time.Duration(number)
+		case "m":
+			newd += time.Minute * time.Duration(number)
+		case "s":
+			newd += time.Second * time.Duration(number)
+		case "d":
+			newd += 24 * time.Hour * time.Duration(number)
+		default:
+			return errInvalidDuration
+		}
+	}
+	*d = Duration(newd)
+	return nil
 }

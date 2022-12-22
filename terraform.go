@@ -85,11 +85,7 @@ func (tg TerraformGenerator) generateRuleGroup(folderName string, jgroup RuleGro
 		hcl.TraverseAttr{Name: "uid"},
 	})
 	tfgroup.SetAttributeValue("name", cty.StringVal(fmt.Sprintf("%s%s", jgroup.Name, tg.RuleGroupNameSuffix)))
-	jgroupIntervalDuration, err := time.ParseDuration(jgroup.Interval)
-	if err != nil {
-		return result, err
-	}
-	tfgroup.SetAttributeValue("interval_seconds", cty.NumberIntVal(int64(jgroupIntervalDuration.Seconds())))
+	tfgroup.SetAttributeValue("interval_seconds", cty.NumberIntVal(int64(time.Duration(jgroup.Interval).Seconds())))
 
 	slices.SortStableFunc(jgroup.Rules, func(a, b Rule) bool {
 		return strings.Compare(a.GrafanaAlert.Title, b.GrafanaAlert.Title) > 0
@@ -189,6 +185,9 @@ func parseCty(obj any) (cty.Value, error) {
 		return cty.ListVal(newlist), nil
 	}
 
+	if obj == nil {
+		panic(nil)
+	}
 	t, err := gocty.ImpliedType(obj)
 	if err != nil {
 		return cty.Value{}, err
