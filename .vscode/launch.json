@@ -12,7 +12,9 @@
             "program": "${workspaceFolder}",
             "args": [
                 "--base-url", "https://my-account.grafana.net/",
-                "--session", "-------------"
+                "--session", "-------------",
+                "--group-suffix", "-TF",
+                "--rule-suffix", " (TF)",
             ]
         }
     ]

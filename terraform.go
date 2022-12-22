@@ -14,7 +14,9 @@ import (
 )
 
 type TerraformGenerator struct {
-	grafanaIncludeAll bool
+	IncludeAPIGroups    bool
+	RuleGroupNameSuffix string
+	RuleTitleSuffix     string
 }
 
 func (tg TerraformGenerator) GenerateFiles(jfolders Folders) (map[string]*hclwrite.File, error) {
@@ -65,7 +67,7 @@ func (tg TerraformGenerator) generateFolder(folderName string, jgroups []RuleGro
 
 func (tg TerraformGenerator) generateRuleGroup(folderName string, jgroup RuleGroup) (*hclwrite.Block, error) {
 	jgroup.Rules = lo.Filter[Rule](jgroup.Rules, func(item Rule, index int) bool {
-		return tg.grafanaIncludeAll || item.GrafanaAlert.Provenance != "api"
+		return tg.IncludeAPIGroups || item.GrafanaAlert.Provenance != "api"
 	})
 
 	if len(jgroup.Rules) == 0 {
@@ -82,7 +84,7 @@ func (tg TerraformGenerator) generateRuleGroup(folderName string, jgroup RuleGro
 		hcl.TraverseAttr{Name: folderName},
 		hcl.TraverseAttr{Name: "uid"},
 	})
-	tfgroup.SetAttributeValue("name", cty.StringVal(fmt.Sprintf("%s-TF", jgroup.Name)))
+	tfgroup.SetAttributeValue("name", cty.StringVal(fmt.Sprintf("%s%s", jgroup.Name, tg.RuleGroupNameSuffix)))
 	jgroupIntervalDuration, err := time.ParseDuration(jgroup.Interval)
 	if err != nil {
 		return result, err
@@ -107,7 +109,7 @@ func (tg TerraformGenerator) generateRuleGroup(folderName string, jgroup RuleGro
 func (tg TerraformGenerator) generateRule(jrule Rule) (*hclwrite.Block, error) {
 	result := hclwrite.NewBlock("rule", nil)
 	tfrule := result.Body()
-	tfrule.SetAttributeValue("name", cty.StringVal(fmt.Sprintf("%s (TF)", jrule.GrafanaAlert.Title)))
+	tfrule.SetAttributeValue("name", cty.StringVal(fmt.Sprintf("%s%s", jrule.GrafanaAlert.Title, tg.RuleTitleSuffix)))
 	tfrule.SetAttributeValue("condition", cty.StringVal(jrule.GrafanaAlert.Condition))
 	tfrule.SetAttributeValue("for", cty.StringVal(jrule.For))
 	tfrule.SetAttributeValue("no_data_state", cty.StringVal(jrule.GrafanaAlert.NoDataState))
