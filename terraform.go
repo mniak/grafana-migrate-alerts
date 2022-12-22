@@ -155,7 +155,12 @@ func (tg TerraformGenerator) generateDataBlock(d Datum) (*hclwrite.Block, error)
 	return result, nil
 }
 
+var fallbackType = cty.String
+
 func parseCty(obj any) (cty.Value, error) {
+	if obj == nil {
+		return cty.NullVal(fallbackType), nil
+	}
 	switch value := obj.(type) {
 	case map[string]any:
 		if len(value) == 0 {
@@ -175,19 +180,31 @@ func parseCty(obj any) (cty.Value, error) {
 			return cty.ListValEmpty(cty.String), nil
 		}
 		newlist := make([]cty.Value, len(value))
+		typeOfList := fallbackType
+		var hasNullOnList bool
 		for i, v := range value {
 			parsed, err := parseCty(v)
 			if err != nil {
 				return cty.Value{}, err
 			}
 			newlist[i] = parsed
+			typeOfList = parsed.Type()
+			if parsed.IsNull() {
+				hasNullOnList = true
+			}
 		}
+
+		if hasNullOnList {
+			for i, v := range newlist {
+				if v.IsNull() {
+					newlist[i] = cty.NullVal(typeOfList)
+				}
+			}
+		}
+
 		return cty.ListVal(newlist), nil
 	}
 
-	if obj == nil {
-		panic(nil)
-	}
 	t, err := gocty.ImpliedType(obj)
 	if err != nil {
 		return cty.Value{}, err
