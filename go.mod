@@ -1,4 +1,4 @@
-module GrafanaAlarms
+module github.com/mniak/grafana-migrate-alerts
 
 go 1.19
 

@@ -9,11 +9,11 @@ import (
 )
 
 var rootCmd = &cobra.Command{
-	Use: "migalert",
+	Use: "grafana-migrate-alerts",
 	Run: func(cmd *cobra.Command, args []string) {
 		grafanaBaseURL := lo.Must1(cmd.Flags().GetString("base-url"))
 		grafanaSession := lo.Must1(cmd.Flags().GetString("session"))
-		grafanaIncludeAll := lo.Must1(cmd.Flags().GetBool("include-all"))
+		grafanaIncludeAll := lo.Must1(cmd.Flags().GetBool("all"))
 		groupSuffix := lo.Must1(cmd.Flags().GetString("group-suffix"))
 		ruleSuffix := lo.Must1(cmd.Flags().GetString("rule-suffix"))
 
@@ -39,7 +39,7 @@ func main() {
 	rootCmd.Flags().String("session", "", "The grafana session id. It can be found on the Cookie 'grafana_session'.")
 	rootCmd.MarkFlagRequired("session")
 
-	rootCmd.Flags().Bool("include-all", false, "Include definitions even for Alert Rules that were created using the API")
+	rootCmd.Flags().Bool("all", false, "Include definitions even for Alert Rules that were created using the API")
 	rootCmd.Flags().String("group-suffix", "", "Suffix to add to Rule Group names")
 	rootCmd.Flags().String("rule-suffix", "", "Suffix to add to Rule titles")
 
